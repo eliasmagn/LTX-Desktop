@@ -31,7 +31,8 @@ $GetPipUrl = "https://bootstrap.pypa.io/get-pip.py"
 
 # PyTorch index URL based on GPU backend (must match the index in pyproject.toml)
 if ($GPUBackend -eq "rocm") {
-    $PyTorchIndex = "https://download.pytorch.org/whl/rocm6.0"
+    # TheRock (rocm6.2) index
+    $PyTorchIndex = "https://download.pytorch.org/whl/rocm6.2"
 } else {
     # Default to CUDA 12.8
     $PyTorchIndex = "https://download.pytorch.org/whl/cu128"

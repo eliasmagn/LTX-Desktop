@@ -182,8 +182,8 @@ echo "  (This may take a while — PyTorch + ML libraries are large)"
 PIP_EXTRA_ARGS=()
 if [ "$PBS_OS" = "unknown-linux-gnu" ]; then
   if [ "$GPU_BACKEND" = "rocm" ]; then
-    # ROCm PyTorch from PyTorch index
-    PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/rocm6.0")
+    # ROCm PyTorch from TheRock (rocm6.2) index
+    PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/rocm6.2")
   else
     # Linux needs CUDA PyTorch wheels from the PyTorch index
     PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/cu128")
