@@ -16,6 +16,26 @@
 set -euo pipefail
 
 # ============================================================
+# Parse arguments
+# ============================================================
+GPU_BACKEND=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --gpu-backend)
+      GPU_BACKEND="$2"
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--gpu-backend cuda|rocm]"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+# ============================================================
 # Configuration
 # ============================================================
 PYTHON_VERSION="${PYTHON_VERSION:-$(cat "$(dirname "$0")/../backend/.python-version" | tr -d '[:space:]')}"
@@ -161,8 +181,13 @@ echo "  (This may take a while — PyTorch + ML libraries are large)"
 
 PIP_EXTRA_ARGS=()
 if [ "$PBS_OS" = "unknown-linux-gnu" ]; then
-  # Linux needs CUDA PyTorch wheels from the PyTorch index
-  PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/cu128")
+  if [ "$GPU_BACKEND" = "rocm" ]; then
+    # ROCm PyTorch from PyTorch index
+    PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/rocm6.0")
+  else
+    # Linux needs CUDA PyTorch wheels from the PyTorch index
+    PIP_EXTRA_ARGS+=(--extra-index-url "https://download.pytorch.org/whl/cu128")
+  fi
 fi
 # On macOS, no --extra-index-url needed: standard PyPI torch includes MPS support
 "$PYTHON_EXE" -m pip install -r "$REQUIREMENTS_FILE" \

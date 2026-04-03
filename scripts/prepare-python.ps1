@@ -9,7 +9,8 @@
 
 param(
     [string]$PythonVersion = (Get-Content "$PSScriptRoot\..\backend\.python-version" -Raw).Trim(),
-    [string]$OutputDir = "python-embed"
+    [string]$OutputDir = "python-embed",
+    [string]$GPUBackend = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -28,8 +29,13 @@ $TempDir = Join-Path $env:TEMP "ltx-python-build"
 $PythonUrl = "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion-embed-amd64.zip"
 $GetPipUrl = "https://bootstrap.pypa.io/get-pip.py"
 
-# PyTorch CUDA index (must match the index in pyproject.toml)
-$PyTorchIndex = "https://download.pytorch.org/whl/cu128"
+# PyTorch index URL based on GPU backend (must match the index in pyproject.toml)
+if ($GPUBackend -eq "rocm") {
+    $PyTorchIndex = "https://download.pytorch.org/whl/rocm6.0"
+} else {
+    # Default to CUDA 12.8
+    $PyTorchIndex = "https://download.pytorch.org/whl/cu128"
+}
 
 # ============================================================
 # Step 1: Verify prerequisites
