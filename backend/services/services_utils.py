@@ -59,8 +59,21 @@ def get_device_type(device: str | torch.device | object | None) -> str:
     return "cpu"
 
 
+def is_rocm_device() -> bool:
+    """Return True if PyTorch is running on an AMD ROCm/HIP backend."""
+    return getattr(torch.version, "hip", None) is not None
+
+
 def device_supports_fp8(device: str | torch.device | object | None) -> bool:
-    return get_device_type(device) == "cuda"
+    if get_device_type(device) != "cuda":
+        return False
+    if is_rocm_device():
+        return False
+    try:
+        major, minor = torch.cuda.get_device_capability()
+        return major > 8 or (major == 8 and minor >= 9)
+    except Exception:
+        return False
 
 
 def sync_device(device: str | torch.device | object | None) -> None:

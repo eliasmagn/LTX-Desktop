@@ -191,16 +191,16 @@ find "$OUTPUT_PATH/lib" -type d -name "tests" -exec rm -rf {} + 2>/dev/null || t
 find "$OUTPUT_PATH/lib" -type d -name "test" -exec rm -rf {} + 2>/dev/null || true
 
 # Remove files only needed for building native extensions, not at runtime.
-# This cuts ~14k files and speeds up macOS codesigning dramatically.
-# NOTE: Linux needs .h files for sageattention/triton JIT compilation.
-if [ "$PBS_OS" = "apple-darwin" ]; then
+
+# On macOS we strip headers aggressively.
+# On Linux ROCm we keep headers because Triton/ROCm pieces may need them.
+if [ "$(uname -s)" = "Darwin" ]; then
   rm -rf "$OUTPUT_PATH/include" "$OUTPUT_PATH/share" 2>/dev/null || true
   find "$OUTPUT_PATH/lib" -type d -name "include" -exec rm -rf {} + 2>/dev/null || true
   find "$OUTPUT_PATH" -name "*.h" -delete 2>/dev/null || true
   find "$OUTPUT_PATH" -name "*.cuh" -delete 2>/dev/null || true
   find "$OUTPUT_PATH" -name "*.cu" -delete 2>/dev/null || true
 else
-  # Linux: keep .h/.cuh/.cu files for triton/sageattention JIT, but remove other build artifacts
   rm -rf "$OUTPUT_PATH/share" 2>/dev/null || true
 fi
 find "$OUTPUT_PATH" -name "*.pyi" -delete 2>/dev/null || true
@@ -229,14 +229,21 @@ print(f'  Python: {sys.version}')
 try:
     import torch
     print(f'  PyTorch: {torch.__version__}')
-    if platform.system() == 'Darwin':
-        mps = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
-        print(f'  MPS available: {mps}')
-    elif platform.system() == 'Linux':
-        cuda = torch.cuda.is_available()
-        print(f'  CUDA available: {cuda}')
-        if cuda:
-            print(f'  CUDA version: {torch.version.cuda}')
+
+    if getattr(torch.version, "hip", None):
+        print(f'  Backend: ROCm/HIP {torch.version.hip}')
+        print(f'  CUDA API available: {torch.cuda.is_available()}')
+        if torch.cuda.is_available():
+            print(f'  Device: {torch.cuda.get_device_name(0)}')
+    else:
+        if platform.system() == 'Darwin':
+            mps = hasattr(torch.backends, 'mps') and torch.backends.mps.is_available()
+            print(f'  MPS available: {mps}')
+        elif platform.system() == 'Linux':
+            cuda = torch.cuda.is_available()
+            print(f'  CUDA available: {cuda}')
+            if cuda:
+                print(f'  CUDA version: {torch.version.cuda}')
 except ImportError as e:
     print(f'  PyTorch import FAILED: {e}')
     sys.exit(1)

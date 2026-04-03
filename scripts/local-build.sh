@@ -39,6 +39,7 @@ BANNER
 SKIP_PYTHON=false
 CLEAN=false
 PLATFORM=""
+GPU_BACKEND=""
 PKG_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -53,13 +54,17 @@ while [[ $# -gt 0 ]]; do
       PKG_ARGS+=("$1" "$2")
       shift
       ;;
+    --gpu-backend)
+      GPU_BACKEND="$2"
+      shift
+      ;;
     --publish)
       PKG_ARGS+=("$1" "$2")
       shift
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--platform mac|win] [--skip-python] [--clean] [--unpack] [--publish always|never|onTag]"
+      echo "Usage: $0 [--platform mac|win] [--skip-python] [--clean] [--unpack] [--gpu-backend rocm] [--publish always|never|onTag]"
       exit 1
       ;;
   esac
@@ -102,10 +107,18 @@ if [ "$SKIP_PYTHON" = false ]; then
   else
     case "$PLATFORM" in
       mac|linux)
-        bash "$SCRIPT_DIR/prepare-python.sh"
+        if [ -n "$GPU_BACKEND" ]; then
+          bash "$SCRIPT_DIR/prepare-python.sh" --gpu-backend "$GPU_BACKEND"
+        else
+          bash "$SCRIPT_DIR/prepare-python.sh"
+        fi
         ;;
       win)
-        powershell.exe -ExecutionPolicy Bypass -File "$SCRIPT_DIR/prepare-python.ps1"
+        if [ -n "$GPU_BACKEND" ]; then
+          powershell.exe -ExecutionPolicy Bypass -File "$SCRIPT_DIR/prepare-python.ps1" -gpu-backend "$GPU_BACKEND"
+        else
+          powershell.exe -ExecutionPolicy Bypass -File "$SCRIPT_DIR/prepare-python.ps1"
+        fi
         ;;
     esac
   fi
@@ -137,4 +150,8 @@ echo ""
 # ============================================================
 # Step 4: Create installer
 # ============================================================
-bash "$SCRIPT_DIR/create-installer.sh" "${PKG_ARGS[@]+"${PKG_ARGS[@]}"}"
+if [ -n "$GPU_BACKEND" ]; then
+  bash "$SCRIPT_DIR/create-installer.sh" "${PKG_ARGS[@]+"${PKG_ARGS[@]}"}" --gpu-backend "$GPU_BACKEND"
+else
+  bash "$SCRIPT_DIR/create-installer.sh" "${PKG_ARGS[@]+"${PKG_ARGS[@]}"}"
+fi

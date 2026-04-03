@@ -49,7 +49,13 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # SageAttention Integration
 # ============================================================
-use_sage_attention = os.environ.get("USE_SAGE_ATTENTION", "1") == "1"
+# Disable SageAttention on AMD ROCm (gfx11**) Linux builds
+# gfx11** = AMD Radeon RX 7000 series (RDNA 3)
+if sys.platform == "linux" and getattr(torch.version, "hip", None):
+    use_sage_attention = False
+    logger.info("SageAttention disabled on AMD ROCm Linux (gfx11**)")
+else:
+    use_sage_attention = os.environ.get("USE_SAGE_ATTENTION", "1") == "1"
 _sageattention_runtime_fallback_logged = False
 
 if use_sage_attention:
@@ -116,6 +122,22 @@ def _get_device() -> torch.device:
 
 DEVICE = _get_device()
 DTYPE = torch.bfloat16
+
+# AMD ROCm detection for gfx11** (RDNA 3 / RX 7000 series)
+# gfx11 family: gfx1100, gfx1101, gfx1102, gfx1150, gfx1151, gfx1152
+if DEVICE.type == "cuda" and sys.platform == "linux":
+    if getattr(torch.version, "hip", None):
+        try:
+            # Get device properties to check for gfx11** architecture
+            props = torch.cuda.get_device_properties(0)
+            device_gfx = props.name
+            # gfx11** corresponds to AMD Radeon RX 7000 series (RDNA 3)
+            if "gfx11" in device_gfx:
+                logger.info("AMD ROCm gfx11** detected on Linux (RDNA 3/RX 7000 series): %s", torch.cuda.get_device_name(0))
+            else:
+                logger.info("AMD ROCm detected on Linux: %s (gfx: %s)", torch.cuda.get_device_name(0), device_gfx)
+        except Exception as e:
+            logger.warning("Could not detect AMD ROCm architecture: %s", e)
 
 def _resolve_app_data_dir() -> Path:
     env_path = os.environ.get("LTX_APP_DATA_DIR")

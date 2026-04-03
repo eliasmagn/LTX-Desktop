@@ -25,9 +25,11 @@
     "openapi:check": "pnpm openapi:generate && git diff --exit-code -- frontend/generated/backend-openapi.json frontend/generated/backend-openapi.ts",
     "backend:test": "cd backend && uv sync --frozen --extra test --extra dev && uv run pytest -v --tb=short",
     "build": "node scripts/run-script.js scripts/local-build",
+    "build:rocm": "node scripts/run-script.js scripts/local-build --gpu-backend rocm",
     "build:skip-python": "node scripts/run-script.js scripts/local-build --skip-python",
     "build:fast": "node scripts/run-script.js scripts/local-build --unpack --skip-python",
     "prepare:python": "node scripts/run-script.js scripts/prepare-python",
+    "prepare:python:rocm": "node scripts/run-script.js scripts/prepare-python --gpu-backend rocm",
     "build:frontend": "vite build",
     "start:unpacked:mac": "open release/mac-arm64/LTX\\ Desktop.app",
     "start:unpacked:win": "powershell -Command \"& '.\\release\\win-unpacked\\LTX Desktop.exe'\""

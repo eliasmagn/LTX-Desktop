@@ -22,6 +22,7 @@ set -euo pipefail
 UNPACK=false
 PLATFORM=""
 PUBLISH=""
+GPU_BACKEND=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -34,9 +35,13 @@ while [[ $# -gt 0 ]]; do
       PLATFORM="$2"
       shift
       ;;
+    --gpu-backend)
+      GPU_BACKEND="$2"
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--platform mac|win] [--publish always|never|onTag] [--unpack]"
+      echo "Usage: $0 [--platform mac|win] [--publish always|never|onTag] [--unpack] [--gpu-backend rocm]"
       exit 1
       ;;
   esac
@@ -65,6 +70,13 @@ cd "$PROJECT_DIR"
 if [ ! -d "dist" ] || [ ! -d "dist-electron" ]; then
   echo "ERROR: Frontend not built. Run local-build.sh or 'npm run build:frontend' first."
   exit 1
+fi
+
+# Set artifact suffix for ROCm builds
+export LTX_ARTIFACT_SUFFIX=""
+if [ "$GPU_BACKEND" = "rocm" ]; then
+  export LTX_ARTIFACT_SUFFIX="-rocm"
+  echo "Building ROCm variant (artifact suffix: $LTX_ARTIFACT_SUFFIX)"
 fi
 
 if [ "$PLATFORM" != "linux" ] && [ ! -d "python-embed" ]; then

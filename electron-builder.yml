@@ -84,7 +84,7 @@ mac:
         - arm64
   icon: resources/icon.icns
   category: public.app-category.video
-  artifactName: ${productName}-${arch}.${ext}
+  artifactName: ${productName}${env.LTX_ARTIFACT_SUFFIX}-${arch}.${ext}
 
 dmg:
   contents:
@@ -99,9 +99,16 @@ linux:
   target:
     - AppImage
     - deb
+  extraResources:
+    - from: python-embed
+      to: python
+      filter:
+        - "**/*"
+        - "!__pycache__/**"
+        - "!*.pyc"
   icon: resources/icons
   category: Video
-  artifactName: ${productName}-${arch}.${ext}
+  artifactName: ${productName}${env.LTX_ARTIFACT_SUFFIX}-${arch}.${ext}
 
 deb:
   depends:
